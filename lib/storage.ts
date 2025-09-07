@@ -3,7 +3,7 @@ import { Todo } from './types';
 // In-memory TODO array
 let todos: Todo[] = [
   {
-    id: 'ccf686a6-4b77-49cc-84b8-cd7fe5a90bb4',
+    id: '1',
     title: 'Sample TODO',
     description: 'This is a sample TODO item',
     is_done: false,
@@ -13,8 +13,9 @@ let todos: Todo[] = [
 ];
 
 // Function to generate new ID
+let nextId = 2; // Start from 2 since sample TODO uses ID '1'
 export function generateId(): string {
-  return crypto.randomUUID();
+  return (nextId++).toString();
 }
 
 // Get all TODOs

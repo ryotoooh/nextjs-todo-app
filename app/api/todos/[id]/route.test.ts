@@ -19,7 +19,7 @@ describe('/api/todos/[id]', () => {
   describe('GET /api/todos/[id]', () => {
     it('should return todo successfully', async () => {
       const mockTodo = {
-        id: 'test-id',
+        id: '1',
         title: 'Test Todo',
         description: 'Test Description',
         is_done: false,
@@ -30,14 +30,14 @@ describe('/api/todos/[id]', () => {
       vi.mocked(getTodoById).mockReturnValue(mockTodo);
 
       const response = await GET(
-        new NextRequest('http://localhost:3000/api/todos/test-id'),
-        { params: Promise.resolve({ id: 'test-id' }) }
+        new NextRequest('http://localhost:3000/api/todos/1'),
+        { params: Promise.resolve({ id: '1' }) }
       );
       const data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data).toEqual(JSON.parse(JSON.stringify(mockTodo)));
-      expect(getTodoById).toHaveBeenCalledWith('test-id');
+      expect(getTodoById).toHaveBeenCalledWith('1');
     });
 
     it('should return 404 when todo not found', async () => {
@@ -59,8 +59,8 @@ describe('/api/todos/[id]', () => {
       });
 
       const response = await GET(
-        new NextRequest('http://localhost:3000/api/todos/test-id'),
-        { params: Promise.resolve({ id: 'test-id' }) }
+        new NextRequest('http://localhost:3000/api/todos/1'),
+        { params: Promise.resolve({ id: '1' }) }
       );
       const data = await response.json();
 
@@ -72,7 +72,7 @@ describe('/api/todos/[id]', () => {
   describe('PUT /api/todos/[id]', () => {
     it('should update todo successfully', async () => {
       const existingTodo = {
-        id: 'test-id',
+        id: '1',
         title: 'Original Todo',
         description: 'Original Description',
         is_done: false,
@@ -95,7 +95,7 @@ describe('/api/todos/[id]', () => {
       vi.mocked(getTodoById).mockReturnValue(existingTodo);
       vi.mocked(updateTodo).mockReturnValue(updatedTodo);
 
-      const request = new NextRequest('http://localhost:3000/api/todos/test-id', {
+      const request = new NextRequest('http://localhost:3000/api/todos/1', {
         method: 'PUT',
         body: JSON.stringify(updateData),
         headers: {
@@ -103,17 +103,17 @@ describe('/api/todos/[id]', () => {
         },
       });
 
-      const response = await PUT(request, { params: Promise.resolve({ id: 'test-id' }) });
+      const response = await PUT(request, { params: Promise.resolve({ id: '1' }) });
       const data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data).toEqual(JSON.parse(JSON.stringify(updatedTodo)));
-      expect(updateTodo).toHaveBeenCalledWith('test-id', updateData);
+      expect(updateTodo).toHaveBeenCalledWith('1', updateData);
     });
 
     it('should update todo with partial data', async () => {
       const existingTodo = {
-        id: 'test-id',
+        id: '1',
         title: 'Original Todo',
         description: 'Original Description',
         is_done: false,
@@ -134,7 +134,7 @@ describe('/api/todos/[id]', () => {
       vi.mocked(getTodoById).mockReturnValue(existingTodo);
       vi.mocked(updateTodo).mockReturnValue(updatedTodo);
 
-      const request = new NextRequest('http://localhost:3000/api/todos/test-id', {
+      const request = new NextRequest('http://localhost:3000/api/todos/1', {
         method: 'PUT',
         body: JSON.stringify(updateData),
         headers: {
@@ -142,12 +142,12 @@ describe('/api/todos/[id]', () => {
         },
       });
 
-      const response = await PUT(request, { params: Promise.resolve({ id: 'test-id' }) });
+      const response = await PUT(request, { params: Promise.resolve({ id: '1' }) });
       const data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data).toEqual(JSON.parse(JSON.stringify(updatedTodo)));
-      expect(updateTodo).toHaveBeenCalledWith('test-id', updateData);
+      expect(updateTodo).toHaveBeenCalledWith('1', updateData);
     });
 
     it('should return 404 when todo not found', async () => {
@@ -171,7 +171,7 @@ describe('/api/todos/[id]', () => {
 
     it('should return 400 when title is empty', async () => {
       const existingTodo = {
-        id: 'test-id',
+        id: '1',
         title: 'Original Todo',
         description: 'Original Description',
         is_done: false,
@@ -181,7 +181,7 @@ describe('/api/todos/[id]', () => {
 
       vi.mocked(getTodoById).mockReturnValue(existingTodo);
 
-      const request = new NextRequest('http://localhost:3000/api/todos/test-id', {
+      const request = new NextRequest('http://localhost:3000/api/todos/1', {
         method: 'PUT',
         body: JSON.stringify({ title: '' }),
         headers: {
@@ -189,7 +189,7 @@ describe('/api/todos/[id]', () => {
         },
       });
 
-      const response = await PUT(request, { params: Promise.resolve({ id: 'test-id' }) });
+      const response = await PUT(request, { params: Promise.resolve({ id: '1' }) });
       const data = await response.json();
 
       expect(response.status).toBe(400);
@@ -199,7 +199,7 @@ describe('/api/todos/[id]', () => {
 
     it('should return 400 when title is only whitespace', async () => {
       const existingTodo = {
-        id: 'test-id',
+        id: '1',
         title: 'Original Todo',
         description: 'Original Description',
         is_done: false,
@@ -209,7 +209,7 @@ describe('/api/todos/[id]', () => {
 
       vi.mocked(getTodoById).mockReturnValue(existingTodo);
 
-      const request = new NextRequest('http://localhost:3000/api/todos/test-id', {
+      const request = new NextRequest('http://localhost:3000/api/todos/1', {
         method: 'PUT',
         body: JSON.stringify({ title: '   ' }),
         headers: {
@@ -217,7 +217,7 @@ describe('/api/todos/[id]', () => {
         },
       });
 
-      const response = await PUT(request, { params: Promise.resolve({ id: 'test-id' }) });
+      const response = await PUT(request, { params: Promise.resolve({ id: '1' }) });
       const data = await response.json();
 
       expect(response.status).toBe(400);
@@ -227,7 +227,7 @@ describe('/api/todos/[id]', () => {
 
     it('should handle update errors gracefully', async () => {
       const existingTodo = {
-        id: 'test-id',
+        id: '1',
         title: 'Original Todo',
         description: 'Original Description',
         is_done: false,
@@ -240,7 +240,7 @@ describe('/api/todos/[id]', () => {
         throw new Error('Update error');
       });
 
-      const request = new NextRequest('http://localhost:3000/api/todos/test-id', {
+      const request = new NextRequest('http://localhost:3000/api/todos/1', {
         method: 'PUT',
         body: JSON.stringify({ title: 'Updated Title' }),
         headers: {
@@ -248,7 +248,7 @@ describe('/api/todos/[id]', () => {
         },
       });
 
-      const response = await PUT(request, { params: Promise.resolve({ id: 'test-id' }) });
+      const response = await PUT(request, { params: Promise.resolve({ id: '1' }) });
       const data = await response.json();
 
       expect(response.status).toBe(500);
@@ -257,7 +257,7 @@ describe('/api/todos/[id]', () => {
 
     it('should handle invalid JSON', async () => {
       const existingTodo = {
-        id: 'test-id',
+        id: '1',
         title: 'Original Todo',
         description: 'Original Description',
         is_done: false,
@@ -267,7 +267,7 @@ describe('/api/todos/[id]', () => {
 
       vi.mocked(getTodoById).mockReturnValue(existingTodo);
 
-      const request = new NextRequest('http://localhost:3000/api/todos/test-id', {
+      const request = new NextRequest('http://localhost:3000/api/todos/1', {
         method: 'PUT',
         body: 'invalid json',
         headers: {
@@ -275,7 +275,7 @@ describe('/api/todos/[id]', () => {
         },
       });
 
-      const response = await PUT(request, { params: Promise.resolve({ id: 'test-id' }) });
+      const response = await PUT(request, { params: Promise.resolve({ id: '1' }) });
       const data = await response.json();
 
       expect(response.status).toBe(500);
@@ -286,7 +286,7 @@ describe('/api/todos/[id]', () => {
   describe('DELETE /api/todos/[id]', () => {
     it('should delete todo successfully', async () => {
       const existingTodo = {
-        id: 'test-id',
+        id: '1',
         title: 'Test Todo',
         description: 'Test Description',
         is_done: false,
@@ -298,14 +298,14 @@ describe('/api/todos/[id]', () => {
       vi.mocked(deleteTodo).mockReturnValue(true);
 
       const response = await DELETE(
-        new NextRequest('http://localhost:3000/api/todos/test-id'),
-        { params: Promise.resolve({ id: 'test-id' }) }
+        new NextRequest('http://localhost:3000/api/todos/1'),
+        { params: Promise.resolve({ id: '1' }) }
       );
       const data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data).toEqual({ message: 'Todo deleted successfully' });
-      expect(deleteTodo).toHaveBeenCalledWith('test-id');
+      expect(deleteTodo).toHaveBeenCalledWith('1');
     });
 
     it('should return 404 when todo not found', async () => {
@@ -324,7 +324,7 @@ describe('/api/todos/[id]', () => {
 
     it('should return 500 when deletion fails', async () => {
       const existingTodo = {
-        id: 'test-id',
+        id: '1',
         title: 'Test Todo',
         description: 'Test Description',
         is_done: false,
@@ -336,8 +336,8 @@ describe('/api/todos/[id]', () => {
       vi.mocked(deleteTodo).mockReturnValue(false);
 
       const response = await DELETE(
-        new NextRequest('http://localhost:3000/api/todos/test-id'),
-        { params: Promise.resolve({ id: 'test-id' }) }
+        new NextRequest('http://localhost:3000/api/todos/1'),
+        { params: Promise.resolve({ id: '1' }) }
       );
       const data = await response.json();
 
@@ -347,7 +347,7 @@ describe('/api/todos/[id]', () => {
 
     it('should handle deletion errors gracefully', async () => {
       const existingTodo = {
-        id: 'test-id',
+        id: '1',
         title: 'Test Todo',
         description: 'Test Description',
         is_done: false,
@@ -361,8 +361,8 @@ describe('/api/todos/[id]', () => {
       });
 
       const response = await DELETE(
-        new NextRequest('http://localhost:3000/api/todos/test-id'),
-        { params: Promise.resolve({ id: 'test-id' }) }
+        new NextRequest('http://localhost:3000/api/todos/1'),
+        { params: Promise.resolve({ id: '1' }) }
       );
       const data = await response.json();
 
