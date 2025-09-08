@@ -1,193 +1,107 @@
 import { Todo, CreateTodoRequest, UpdateTodoRequest } from './types';
-import { 
-  getAllTodos as storageGetAllTodos, 
-  getTodoById as storageGetTodoById, 
-  createTodo as storageCreateTodo, 
-  updateTodo as storageUpdateTodo, 
-  deleteTodo as storageDeleteTodo 
-} from './storage';
+import { TodoRepository } from './repositories/TodoRepository';
+import { ArrayTodoRepository } from './repositories/ArrayTodoRepository';
+import { ApiTodoRepository } from './repositories/ApiTodoRepository';
 
-// Configuration for the service
-interface TodoServiceConfig {
-  useApi?: boolean; // Flag to determine whether to use API or direct storage
-  baseUrl?: string;
-  timeout?: number;
+// Storage types for configuration
+export type StorageType = 'array' | 'api' | 'database';
+
+// Configuration interface
+export interface TodoServiceConfig {
+  storage: StorageType;
+  apiConfig?: {
+    baseUrl: string;
+    timeout?: number;
+  };
+  databaseConfig?: {
+    // Future database configuration
+    connectionString?: string;
+    tableName?: string;
+  };
 }
 
-// Default configuration
-const defaultConfig: TodoServiceConfig = {
-  useApi: false, // Default to using direct storage for SSR efficiency
-  baseUrl: process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000',
-  timeout: 10000, // 10 seconds
-};
-
-// Service class for handling TODO operations
+// Service class using dependency injection
 export class TodoService {
-  private config: TodoServiceConfig;
+  private repository: TodoRepository;
 
-  constructor(config: TodoServiceConfig = {}) {
-    this.config = { ...defaultConfig, ...config };
+  constructor(config: TodoServiceConfig) {
+    this.repository = this.createRepository(config);
+  }
+
+  private createRepository(config: TodoServiceConfig): TodoRepository {
+    switch (config.storage) {
+      case 'array':
+        return new ArrayTodoRepository();
+      
+      case 'api':
+        if (!config.apiConfig) {
+          throw new Error('API configuration is required when using API storage');
+        }
+        return new ApiTodoRepository(config.apiConfig);
+      
+      case 'database':
+        // Future implementation
+        throw new Error('Database storage not implemented yet');
+      
+      default:
+        throw new Error(`Unknown storage type: ${config.storage}`);
+    }
   }
 
   // Get all todos
   async getAllTodos(): Promise<Todo[]> {
-    if (!this.config.useApi) {
-      // Use direct storage access for SSR efficiency
-      return storageGetAllTodos();
-    }
-
-    // Fallback to API call if needed
-    try {
-      const response = await fetch(`${this.config.baseUrl}/api/todos`, {
-        cache: 'no-store', // Always fetch latest data
-        signal: AbortSignal.timeout(this.config.timeout!),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch todos: ${response.status} ${response.statusText}`);
-      }
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching todos:', error);
-      throw new Error('Failed to fetch todos');
-    }
+    return this.repository.getAll();
   }
 
   // Get todo by ID
   async getTodoById(id: string): Promise<Todo> {
-    if (!this.config.useApi) {
-      // Use direct storage access for SSR efficiency
-      const todo = storageGetTodoById(id);
-      if (!todo) {
-        throw new Error('Todo not found');
-      }
-      return todo;
+    const todo = await this.repository.getById(id);
+    if (!todo) {
+      throw new Error('Todo not found');
     }
-
-    // Fallback to API call if needed
-    try {
-      const response = await fetch(`${this.config.baseUrl}/api/todos/${id}`, {
-        cache: 'no-store',
-        signal: AbortSignal.timeout(this.config.timeout!),
-      });
-      
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error('Todo not found');
-        }
-        throw new Error(`Failed to fetch todo: ${response.status} ${response.statusText}`);
-      }
-      
-      return await response.json();
-    } catch (error) {
-      console.error(`Error fetching todo ${id}:`, error);
-      throw error;
-    }
+    return todo;
   }
 
   // Create a new todo
   async createTodo(todoData: CreateTodoRequest): Promise<Todo> {
-    if (!this.config.useApi) {
-      // Use direct storage access for SSR efficiency
-      return storageCreateTodo(todoData.title, todoData.description, todoData.is_done);
-    }
-
-    // Fallback to API call if needed
-    try {
-      const response = await fetch(`${this.config.baseUrl}/api/todos`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(todoData),
-        signal: AbortSignal.timeout(this.config.timeout!),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to create todo: ${response.status} ${response.statusText}`);
-      }
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Error creating todo:', error);
-      throw new Error('Failed to create todo');
-    }
+    return this.repository.create(todoData);
   }
 
   // Update a todo
   async updateTodo(id: string, updates: UpdateTodoRequest): Promise<Todo> {
-    if (!this.config.useApi) {
-      // Use direct storage access for SSR efficiency
-      const updatedTodo = storageUpdateTodo(id, updates);
-      if (!updatedTodo) {
-        throw new Error('Todo not found');
-      }
-      return updatedTodo;
+    const updatedTodo = await this.repository.update(id, updates);
+    if (!updatedTodo) {
+      throw new Error('Todo not found');
     }
-
-    // Fallback to API call if needed
-    try {
-      const response = await fetch(`${this.config.baseUrl}/api/todos/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updates),
-        signal: AbortSignal.timeout(this.config.timeout!),
-      });
-      
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error('Todo not found');
-        }
-        throw new Error(`Failed to update todo: ${response.status} ${response.statusText}`);
-      }
-      
-      return await response.json();
-    } catch (error) {
-      console.error(`Error updating todo ${id}:`, error);
-      throw error;
-    }
+    return updatedTodo;
   }
 
   // Delete a todo
   async deleteTodo(id: string): Promise<void> {
-    if (!this.config.useApi) {
-      // Use direct storage access for SSR efficiency
-      const success = storageDeleteTodo(id);
-      if (!success) {
-        throw new Error('Todo not found');
-      }
-      return;
-    }
-
-    // Fallback to API call if needed
-    try {
-      const response = await fetch(`${this.config.baseUrl}/api/todos/${id}`, {
-        method: 'DELETE',
-        signal: AbortSignal.timeout(this.config.timeout!),
-      });
-      
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error('Todo not found');
-        }
-        throw new Error(`Failed to delete todo: ${response.status} ${response.statusText}`);
-      }
-    } catch (error) {
-      console.error(`Error deleting todo ${id}:`, error);
-      throw error;
+    const success = await this.repository.delete(id);
+    if (!success) {
+      throw new Error('Todo not found');
     }
   }
 }
 
-// Default service instance (uses direct storage by default)
-export const todoService = new TodoService();
+// Factory function for easy service creation
+export function createTodoService(config: TodoServiceConfig): TodoService {
+  return new TodoService(config);
+}
+
+// Default service instances for different storage types
+export const arrayTodoService = new TodoService({ storage: 'array' });
+export const apiTodoService = new TodoService({
+  storage: 'api',
+  apiConfig: {
+    baseUrl: process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000',
+  },
+});
 
 // Convenience functions for backward compatibility
-export const getTodos = () => todoService.getAllTodos();
-export const getTodoById = (id: string) => todoService.getTodoById(id);
-export const createTodo = (todoData: CreateTodoRequest) => todoService.createTodo(todoData);
-export const updateTodo = (id: string, updates: UpdateTodoRequest) => todoService.updateTodo(id, updates);
-export const deleteTodo = (id: string) => todoService.deleteTodo(id);
+export const getTodos = () => arrayTodoService.getAllTodos();
+export const getTodoById = (id: string) => arrayTodoService.getTodoById(id);
+export const createTodo = (todoData: CreateTodoRequest) => arrayTodoService.createTodo(todoData);
+export const updateTodo = (id: string, updates: UpdateTodoRequest) => arrayTodoService.updateTodo(id, updates);
+export const deleteTodo = (id: string) => arrayTodoService.deleteTodo(id);
