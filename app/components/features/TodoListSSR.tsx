@@ -1,6 +1,6 @@
 import { Todo } from '@/lib/types';
-import TodoListPresentation from './TodoListPresentation';
-import TodoFormSSR from './TodoFormSSR';
+import TodoListPresentation from '../ui/TodoListPresentation';
+import TodoFormSSR from '../forms/TodoFormSSR';
 import { createDefaultTodoService } from '@/lib/todoService';
 
 // Server Component implementation

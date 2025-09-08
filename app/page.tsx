@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import TodoList from './components/TodoList';
+import TodoList from './components/features/TodoList';
 
 export default function Home() {
   return (
