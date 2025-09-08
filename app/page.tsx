@@ -3,19 +3,24 @@ import TodoList from './components/features/TodoList';
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto py-8">
-        <h1 className="text-3xl font-bold text-center mb-8 text-gray-800">
-          Todo App (Client Version)
-        </h1>
-        <div className="text-center mb-6">
-          <Link 
-            href="/ssr" 
-            className="text-blue-600 hover:text-blue-800 underline"
-          >
-            View SSR Version
-          </Link>
-        </div>
+    <div className="min-h-screen bg-white">
+      <div className="max-w-4xl mx-auto px-4 py-12">
+        <header className="text-center mb-16">
+          <h1 className="text-4xl font-light text-black mb-4">
+            Todo
+          </h1>
+          <p className="text-gray-600 text-sm">
+            Simple task management
+          </p>
+          <div className="mt-8">
+            <Link 
+              href="/ssr" 
+              className="text-black hover:text-gray-600 text-sm underline underline-offset-4 transition-colors"
+            >
+              View SSR Version
+            </Link>
+          </div>
+        </header>
         <TodoList />
       </div>
     </div>

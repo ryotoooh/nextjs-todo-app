@@ -5,65 +5,61 @@ interface TodoListUIProps {
   title?: string;
 }
 
-export default function TodoListUI({ todos, title = "Todo List" }: TodoListUIProps) {
+export default function TodoListUI({ todos, title = "Tasks" }: TodoListUIProps) {
   if (todos.length === 0) {
     return (
-      <div className="flex justify-center items-center p-8">
-        <div className="text-gray-500">No todos found</div>
+      <div className="text-center py-16">
+        <div className="text-gray-500 text-sm">No tasks yet</div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-4">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">{title}</h2>
-      <div className="space-y-3">
-        {todos.map((todo) => (
-          <div
-            key={todo.id}
-            className={`p-4 rounded-lg border ${
-              todo.is_done
-                ? 'bg-green-50 border-green-200'
-                : 'bg-white border-gray-200'
-            }`}
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <h3
-                  className={`font-medium ${
-                    todo.is_done ? 'line-through text-gray-500' : 'text-gray-800'
-                  }`}
-                >
-                  {todo.title}
-                </h3>
-                {todo.description && (
-                  <p
-                    className={`mt-1 text-sm ${
-                      todo.is_done ? 'text-gray-400' : 'text-gray-600'
-                    }`}
-                  >
-                    {todo.description}
-                  </p>
+    <div className="space-y-1">
+      {todos.map((todo) => (
+        <div
+          key={todo.id}
+          className={`group border-b border-gray-100 py-4 px-1 transition-colors hover:bg-gray-50 ${
+            todo.is_done ? 'opacity-60' : ''
+          }`}
+        >
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 mt-1">
+              <div className={`w-4 h-4 border border-gray-300 rounded-sm flex items-center justify-center ${
+                todo.is_done ? 'bg-black border-black' : 'bg-white'
+              }`}>
+                {todo.is_done && (
+                  <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
                 )}
-                <div className="mt-2 text-xs text-gray-400">
-                  Created: {new Date(todo.createdAt).toLocaleDateString()}
-                </div>
               </div>
-              <div className="ml-4">
-                <span
-                  className={`px-2 py-1 text-xs rounded-full ${
-                    todo.is_done
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-yellow-100 text-yellow-800'
-                  }`}
-                >
-                  {todo.is_done ? 'Done' : 'Pending'}
-                </span>
+            </div>
+            
+            <div className="flex-1 min-w-0">
+              <h3 className={`text-sm font-medium text-black ${
+                todo.is_done ? 'line-through' : ''
+              }`}>
+                {todo.title}
+              </h3>
+              {todo.description && (
+                <p className={`mt-1 text-xs text-gray-600 ${
+                  todo.is_done ? 'line-through' : ''
+                }`}>
+                  {todo.description}
+                </p>
+              )}
+              <div className="mt-2 text-xs text-gray-400">
+                {new Date(todo.createdAt).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric'
+                })}
               </div>
             </div>
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
     </div>
   );
 }

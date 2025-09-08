@@ -51,52 +51,43 @@ export default function TodoFormShared({
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-4 mb-8">
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h2 className="text-xl font-semibold mb-4 text-gray-800">Add New Todo</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor={`title-${formId}`} className="block text-sm font-medium text-gray-700 mb-1">
-              Title *
-            </label>
+    <div className="mb-12">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="flex gap-3">
+          <div className="flex-1">
             <input
               type="text"
-              id={`title-${formId}`}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Enter todo title..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="What needs to be done?"
+              className="w-full px-0 py-3 bg-transparent border-0 border-b border-gray-200 focus:border-black focus:outline-none text-sm placeholder-gray-400 transition-colors"
               required
               disabled={isSubmitting || loading}
             />
           </div>
           
-          <div>
-            <label htmlFor={`description-${formId}`} className="block text-sm font-medium text-gray-700 mb-1">
-              Description
-            </label>
+          <button
+            type="submit"
+            disabled={!title.trim() || isSubmitting || loading}
+            className="px-6 py-3 bg-black text-white text-sm font-medium hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {isSubmitting ? 'Adding...' : 'Add'}
+          </button>
+        </div>
+        
+        {description.length > 0 && (
+          <div className="mt-2">
             <textarea
-              id={`description-${formId}`}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Enter todo description (optional)..."
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              placeholder="Add details (optional)"
+              rows={2}
+              className="w-full px-0 py-2 bg-transparent border-0 border-b border-gray-200 focus:border-black focus:outline-none text-sm placeholder-gray-400 resize-none transition-colors"
               disabled={isSubmitting || loading}
             />
           </div>
-          
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={!title.trim() || isSubmitting || loading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {isSubmitting ? 'Adding...' : 'Add Todo'}
-            </button>
-          </div>
-        </form>
-      </div>
+        )}
+      </form>
     </div>
   );
 }

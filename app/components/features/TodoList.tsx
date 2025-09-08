@@ -14,16 +14,16 @@ export default function TodoList() {
 
   if (loading && todos.length === 0) {
     return (
-      <div className="flex justify-center items-center p-8">
-        <div className="text-gray-600">Loading...</div>
+      <div className="text-center py-16">
+        <div className="text-gray-500 text-sm">Loading...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex justify-center items-center p-8">
-        <div className="text-red-600">Error: {error}</div>
+      <div className="text-center py-16">
+        <div className="text-red-600 text-sm">Error: {error}</div>
       </div>
     );
   }
@@ -31,7 +31,7 @@ export default function TodoList() {
   return (
     <div>
       <TodoForm onSubmit={handleCreateTodo} loading={loading} />
-      <TodoListPresentation todos={todos} title="Todo List" />
+      <TodoListPresentation todos={todos} title="Tasks" />
     </div>
   );
 }
