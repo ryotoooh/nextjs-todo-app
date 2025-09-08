@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { TodoService } from '@/lib/todoService';
+import { TodoService, createDefaultTodoService } from '@/lib/todoService';
 import { UpdateTodoRequest } from '@/lib/types';
-
-// Create service instance for API routes (using array storage)
-const getTodoService = () => new TodoService({ storage: 'array' });
 
 // GET /api/todos/[id] - Get single TODO by ID
 export async function GET(
@@ -12,7 +9,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const todoService = getTodoService();
+    const todoService = createDefaultTodoService();
     
     const todo = await todoService.getTodoById(id);
     
@@ -41,7 +38,7 @@ export async function PUT(
   try {
     const { id } = await params;
     const body: UpdateTodoRequest = await request.json();
-    const todoService = getTodoService();
+    const todoService = createDefaultTodoService();
     
     // Validation
     if (body.title !== undefined && body.title.trim() === '') {
@@ -77,7 +74,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const todoService = getTodoService();
+    const todoService = createDefaultTodoService();
     
     await todoService.deleteTodo(id);
     

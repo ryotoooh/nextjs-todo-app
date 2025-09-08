@@ -4,7 +4,7 @@ import { ArrayTodoRepository } from './repositories/ArrayTodoRepository';
 import { ApiTodoRepository } from './repositories/ApiTodoRepository';
 
 // Storage types for configuration
-export type StorageType = 'array' | 'api' | 'database';
+export type StorageType = 'array' | 'api' | 'sqlite';
 
 // Configuration interface
 export interface TodoServiceConfig {
@@ -13,10 +13,8 @@ export interface TodoServiceConfig {
     baseUrl: string;
     timeout?: number;
   };
-  databaseConfig?: {
-    // Future database configuration
-    connectionString?: string;
-    tableName?: string;
+  sqliteConfig?: {
+    dbPath?: string;
   };
 }
 
@@ -39,9 +37,17 @@ export class TodoService {
         }
         return new ApiTodoRepository(config.apiConfig);
       
-      case 'database':
-        // Future implementation
-        throw new Error('Database storage not implemented yet');
+      case 'sqlite':
+        // SQLite is only available on server-side
+        if (typeof window !== 'undefined') {
+          // On client-side, fallback to API
+          return new ApiTodoRepository({
+            baseUrl: process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000',
+          });
+        }
+        // On server-side, use SQLite
+        const { SqliteTodoRepository } = require('./repositories/SqliteTodoRepository');
+        return new SqliteTodoRepository(config.sqliteConfig);
       
       default:
         throw new Error(`Unknown storage type: ${config.storage}`);
@@ -90,6 +96,28 @@ export function createTodoService(config: TodoServiceConfig): TodoService {
   return new TodoService(config);
 }
 
+// Helper function to get storage type from environment
+function getStorageType(): StorageType {
+  // On client-side, we can't access server environment variables
+  // Use NEXT_PUBLIC_ prefix for client-side access
+  const storage = typeof window !== 'undefined' 
+    ? (process.env.NEXT_PUBLIC_DATABASE_STORAGE || 'array')
+    : (process.env.DATABASE_STORAGE || 'array');
+  
+  switch (storage.toLowerCase()) {
+    case 'array':
+      return 'array';
+    case 'api':
+      return 'api';
+    case 'sqlite':
+    case 'local':
+      return 'sqlite';
+    default:
+      console.warn(`Unknown DATABASE_STORAGE value: ${storage}. Using 'array' as default.`);
+      return 'array';
+  }
+}
+
 // Default service instances for different storage types
 export const arrayTodoService = new TodoService({ storage: 'array' });
 export const apiTodoService = new TodoService({
@@ -98,6 +126,34 @@ export const apiTodoService = new TodoService({
     baseUrl: process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000',
   },
 });
+export const sqliteTodoService = new TodoService({
+  storage: 'sqlite',
+  sqliteConfig: {
+    dbPath: process.env.SQLITE_DB_PATH || './data/todos.db',
+  },
+});
+
+// Default service factory - uses environment configuration
+export function createDefaultTodoService(): TodoService {
+  const storage = getStorageType();
+  
+  // On client-side, always use API to avoid direct database access
+  if (typeof window !== 'undefined') {
+    return apiTodoService;
+  }
+  
+  // On server-side, use environment-based storage
+  switch (storage) {
+    case 'array':
+      return arrayTodoService;
+    case 'api':
+      return apiTodoService;
+    case 'sqlite':
+      return sqliteTodoService;
+    default:
+      return arrayTodoService;
+  }
+}
 
 // Convenience functions for backward compatibility
 export const getTodos = () => arrayTodoService.getAllTodos();

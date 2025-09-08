@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Todo, CreateTodoRequest, UpdateTodoRequest } from '@/lib/types';
-import { TodoService, TodoServiceConfig } from '@/lib/todoService';
+import { TodoService, TodoServiceConfig, createDefaultTodoService } from '@/lib/todoService';
 
 interface UseTodosReturn {
   todos: Todo[];
@@ -21,8 +21,10 @@ export function useTodos(options: UseTodosOptions = {}): UseTodosReturn {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Create service instance with provided config or default to array storage
-  const service = new TodoService(options.serviceConfig || { storage: 'array' });
+  // Create service instance with provided config or use environment-based default
+  const service = options.serviceConfig 
+    ? new TodoService(options.serviceConfig)
+    : createDefaultTodoService();
 
   const fetchTodos = async () => {
     try {

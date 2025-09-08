@@ -9,10 +9,8 @@ const mockTodoService = {
 };
 
 vi.mock('@/lib/todoService', () => ({
-  TodoService: vi.fn().mockImplementation(() => mockTodoService),
+  createDefaultTodoService: vi.fn(() => mockTodoService),
 }));
-
-import { TodoService } from '@/lib/todoService';
 
 describe('/api/todos', () => {
   beforeEach(() => {
