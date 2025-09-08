@@ -4,19 +4,29 @@ interface TodoListPresentationProps {
   todos: Todo[];
   title?: string;
   onToggleDone?: (id: string, is_done: boolean) => void;
-  // Server action for SSR mode
+  onDelete?: (id: string) => void;
+  // Server actions for SSR mode
   toggleAction?: (todoId: string, isDone: boolean) => Promise<void>;
+  deleteAction?: (todoId: string) => Promise<void>;
 }
 
 export default function TodoListPresentation({ 
   todos, 
   title = "Tasks", 
   onToggleDone,
-  toggleAction 
+  onDelete,
+  toggleAction,
+  deleteAction 
 }: TodoListPresentationProps) {
   const handleCheckboxClick = (todo: Todo) => {
     if (onToggleDone) {
       onToggleDone(todo.id, !todo.is_done);
+    }
+  };
+
+  const handleDeleteClick = (todoId: string) => {
+    if (onDelete) {
+      onDelete(todoId);
     }
   };
 
@@ -33,7 +43,7 @@ export default function TodoListPresentation({
       {todos.map((todo) => (
         <div
           key={todo.id}
-          className={`group border-b border-gray-100 py-4 px-1 transition-colors hover:bg-gray-50 ${
+          className={`group border-b border-gray-100 py-4 px-1 transition-all duration-200 hover:bg-gray-50 ${
             todo.is_done ? 'opacity-60' : ''
           }`}
         >
@@ -94,6 +104,35 @@ export default function TodoListPresentation({
                   year: 'numeric'
                 })}
               </div>
+            </div>
+
+            {/* Delete Button */}
+            <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              {deleteAction ? (
+                // Server action form for SSR
+                <form action={deleteAction.bind(null, todo.id)}>
+                  <button
+                    type="submit"
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-600 transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-red-200"
+                    aria-label="Delete task"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </form>
+              ) : (
+                // Client-side button for CSR
+                <button
+                  onClick={() => handleDeleteClick(todo.id)}
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-600 transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-red-200"
+                  aria-label="Delete task"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              )}
             </div>
           </div>
         </div>

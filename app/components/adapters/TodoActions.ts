@@ -34,3 +34,13 @@ export async function toggleTodoAction(todoId: string, isDone: boolean) {
   // Revalidate the SSR page to show the updated todo
   revalidatePath('/ssr');
 }
+
+export async function deleteTodoAction(todoId: string) {
+  'use server';
+  
+  const service = createDefaultTodoService();
+  await service.deleteTodo(todoId);
+  
+  // Revalidate the SSR page to show the updated todo list
+  revalidatePath('/ssr');
+}
