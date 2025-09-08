@@ -67,6 +67,55 @@ export async function PUT(
   }
 }
 
+// POST /api/todos/[id] - Handle form submissions for SSR
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const formData = await request.formData();
+    const method = formData.get('_method') as string;
+    
+    if (method === 'PUT') {
+      // Handle form-based PUT request
+      const updateData: UpdateTodoRequest = {};
+      
+      const title = formData.get('title') as string;
+      const description = formData.get('description') as string;
+      const is_done = formData.get('is_done') as string;
+      
+      if (title !== null) updateData.title = title;
+      if (description !== null) updateData.description = description || null;
+      if (is_done !== null) updateData.is_done = is_done === 'true';
+      
+      const todoService = createDefaultTodoService();
+      const updatedTodo = await todoService.updateTodo(id, updateData);
+      
+      // Redirect back to the SSR page after successful update
+      return NextResponse.redirect(new URL('/ssr', request.url));
+    }
+    
+    return NextResponse.json(
+      { error: 'Invalid method' },
+      { status: 400 }
+    );
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Todo not found') {
+      return NextResponse.json(
+        { error: 'Todo not found' },
+        { status: 404 }
+      );
+    }
+    
+    console.error('Error handling form submission:', error);
+    return NextResponse.json(
+      { error: 'Failed to process request' },
+      { status: 500 }
+    );
+  }
+}
+
 // DELETE /api/todos/[id] - Delete TODO by ID
 export async function DELETE(
   request: NextRequest,

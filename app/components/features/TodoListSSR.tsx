@@ -1,5 +1,5 @@
 import { Todo } from '@/lib/types';
-import TodoListPresentation from '../ui/TodoListPresentation';
+import TodoListPresentationSSR from '../ui/TodoListPresentationSSR';
 import TodoFormSSR from '../forms/TodoFormSSR';
 import { createDefaultTodoService } from '@/lib/todoService';
 
@@ -12,7 +12,7 @@ export default async function TodoListSSR() {
   return (
     <div>
       <TodoFormSSR />
-      <TodoListPresentation todos={todos} title="Todo List (SSR)" />
+      <TodoListPresentationSSR todos={todos} title="Todo List (SSR)" />
     </div>
   );
 }

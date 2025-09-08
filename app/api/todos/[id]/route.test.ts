@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { GET, PUT, DELETE } from './route';
+import { GET, PUT, POST, DELETE } from './route';
 import { NextRequest } from 'next/server';
 
 // Mock TodoService
@@ -218,6 +218,124 @@ describe('/api/todos/[id]', () => {
 
       expect(response.status).toBe(500);
       expect(data).toEqual({ error: 'Failed to update todo' });
+    });
+  });
+
+  describe('POST /api/todos/[id]', () => {
+    it('should handle form-based PUT request successfully', async () => {
+      const formData = new FormData();
+      formData.append('_method', 'PUT');
+      formData.append('is_done', 'true');
+
+      const updatedTodo = {
+        id: '1',
+        title: 'Original Todo',
+        description: 'Original Description',
+        is_done: true,
+        createdAt: new Date('2024-01-01T00:00:00Z'),
+        updatedAt: new Date('2024-01-02T00:00:00Z'),
+      };
+
+      mockTodoService.updateTodo.mockResolvedValue(updatedTodo);
+
+      const request = new NextRequest('http://localhost:3000/api/todos/1', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const response = await POST(request, { params: Promise.resolve({ id: '1' }) });
+
+      expect(response.status).toBe(307); // Redirect status
+      expect(response.headers.get('location')).toBe('http://localhost:3000/ssr');
+      expect(mockTodoService.updateTodo).toHaveBeenCalledWith('1', { is_done: true });
+    });
+
+    it('should handle form-based PUT request with title and description', async () => {
+      const formData = new FormData();
+      formData.append('_method', 'PUT');
+      formData.append('title', 'Updated Title');
+      formData.append('description', 'Updated Description');
+      formData.append('is_done', 'false');
+
+      const updatedTodo = {
+        id: '1',
+        title: 'Updated Title',
+        description: 'Updated Description',
+        is_done: false,
+        createdAt: new Date('2024-01-01T00:00:00Z'),
+        updatedAt: new Date('2024-01-02T00:00:00Z'),
+      };
+
+      mockTodoService.updateTodo.mockResolvedValue(updatedTodo);
+
+      const request = new NextRequest('http://localhost:3000/api/todos/1', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const response = await POST(request, { params: Promise.resolve({ id: '1' }) });
+
+      expect(response.status).toBe(307);
+      expect(mockTodoService.updateTodo).toHaveBeenCalledWith('1', {
+        title: 'Updated Title',
+        description: 'Updated Description',
+        is_done: false,
+      });
+    });
+
+    it('should return 400 for invalid method', async () => {
+      const formData = new FormData();
+      formData.append('_method', 'INVALID');
+
+      const request = new NextRequest('http://localhost:3000/api/todos/1', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const response = await POST(request, { params: Promise.resolve({ id: '1' }) });
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data).toEqual({ error: 'Invalid method' });
+      expect(mockTodoService.updateTodo).not.toHaveBeenCalled();
+    });
+
+    it('should return 404 when todo not found', async () => {
+      const formData = new FormData();
+      formData.append('_method', 'PUT');
+      formData.append('is_done', 'true');
+
+      mockTodoService.updateTodo.mockRejectedValue(new Error('Todo not found'));
+
+      const request = new NextRequest('http://localhost:3000/api/todos/non-existent', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const response = await POST(request, { params: Promise.resolve({ id: 'non-existent' }) });
+      const data = await response.json();
+
+      expect(response.status).toBe(404);
+      expect(data).toEqual({ error: 'Todo not found' });
+    });
+
+    it('should handle form submission errors gracefully', async () => {
+      const formData = new FormData();
+      formData.append('_method', 'PUT');
+      formData.append('is_done', 'true');
+
+      mockTodoService.updateTodo.mockRejectedValue(new Error('Update error'));
+
+      const request = new NextRequest('http://localhost:3000/api/todos/1', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const response = await POST(request, { params: Promise.resolve({ id: '1' }) });
+      const data = await response.json();
+
+      expect(response.status).toBe(500);
+      expect(data).toEqual({ error: 'Failed to process request' });
     });
   });
 

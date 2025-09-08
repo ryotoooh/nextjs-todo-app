@@ -6,10 +6,18 @@ import TodoForm from '../forms/TodoForm';
 import { CreateTodoRequest } from '@/lib/types';
 
 export default function TodoList() {
-  const { todos, loading, error, createTodo } = useTodos();
+  const { todos, loading, error, createTodo, updateTodo } = useTodos();
 
   const handleCreateTodo = async (data: CreateTodoRequest) => {
     await createTodo(data);
+  };
+
+  const handleToggleDone = async (id: string, is_done: boolean) => {
+    try {
+      await updateTodo(id, { is_done });
+    } catch (error) {
+      console.error('Failed to toggle todo:', error);
+    }
   };
 
   if (loading && todos.length === 0) {
@@ -31,7 +39,11 @@ export default function TodoList() {
   return (
     <div>
       <TodoForm onSubmit={handleCreateTodo} loading={loading} />
-      <TodoListPresentation todos={todos} title="Tasks" />
+      <TodoListPresentation 
+        todos={todos} 
+        title="Tasks" 
+        onToggleDone={handleToggleDone}
+      />
     </div>
   );
 }
