@@ -1,7 +1,8 @@
 import { Todo } from '@/lib/types';
-import TodoListPresentationSSR from '../ui/TodoListPresentationSSR';
-import TodoFormSSR from '../forms/TodoFormSSR';
+import TodoListPresentation from '../ui/TodoListPresentation';
+import TodoFormShared from '../forms/TodoFormShared';
 import { createDefaultTodoService } from '@/lib/todoService';
+import { createTodoAction, toggleTodoAction } from '../adapters/TodoActions';
 
 // Server Component implementation
 export default async function TodoListSSR() {
@@ -11,8 +12,12 @@ export default async function TodoListSSR() {
   
   return (
     <div>
-      <TodoFormSSR />
-      <TodoListPresentationSSR todos={todos} title="Todo List (SSR)" />
+      <TodoFormShared serverAction={createTodoAction} />
+      <TodoListPresentation 
+        todos={todos} 
+        title="Todo List (SSR)" 
+        toggleAction={toggleTodoAction}
+      />
     </div>
   );
 }
