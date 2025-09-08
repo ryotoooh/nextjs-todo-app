@@ -15,6 +15,6 @@ export interface CreateTodoRequest {
 
 export interface UpdateTodoRequest {
   title?: string;
-  description?: string;
+  description?: string | null;
   is_done?: boolean;
 }
