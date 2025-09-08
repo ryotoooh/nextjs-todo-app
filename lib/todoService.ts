@@ -104,6 +104,11 @@ function getStorageType(): StorageType {
     ? (process.env.NEXT_PUBLIC_DATABASE_STORAGE || 'array')
     : (process.env.DATABASE_STORAGE || 'array');
   
+  // Debug logging for build-time issues
+  if (typeof window === 'undefined') {
+    console.log(`[Server] DATABASE_STORAGE: ${process.env.DATABASE_STORAGE || 'undefined'}, using: ${storage}`);
+  }
+  
   switch (storage.toLowerCase()) {
     case 'array':
       return 'array';
@@ -126,12 +131,16 @@ export const apiTodoService = new TodoService({
     baseUrl: process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000',
   },
 });
-export const sqliteTodoService = new TodoService({
-  storage: 'sqlite',
-  sqliteConfig: {
-    dbPath: process.env.SQLITE_DB_PATH || './data/todos.db',
-  },
-});
+
+// SQLite service factory - lazy initialization to avoid build-time errors
+function createSqliteTodoService(): TodoService {
+  return new TodoService({
+    storage: 'sqlite',
+    sqliteConfig: {
+      dbPath: process.env.SQLITE_DB_PATH || './data/todos.db',
+    },
+  });
+}
 
 // Default service factory - uses environment configuration
 export function createDefaultTodoService(): TodoService {
@@ -149,7 +158,7 @@ export function createDefaultTodoService(): TodoService {
     case 'api':
       return apiTodoService;
     case 'sqlite':
-      return sqliteTodoService;
+      return createSqliteTodoService();
     default:
       return arrayTodoService;
   }
