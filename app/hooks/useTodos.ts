@@ -46,7 +46,7 @@ export function useTodos(): UseTodosReturn {
       if (!response.ok) throw new Error(`Failed to create todo: ${response.status}`);
       
       const newTodo = await response.json();
-      setTodos(prev => [...prev, newTodo]);
+      setTodos(prev => [newTodo, ...prev]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create todo');
       throw err;
