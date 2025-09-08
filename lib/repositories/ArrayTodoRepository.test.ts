@@ -7,11 +7,8 @@ describe('ArrayTodoRepository', () => {
 
   beforeEach(() => {
     // Reset the repository state before each test
+    ArrayTodoRepository.reset();
     repository = new ArrayTodoRepository();
-    
-    // Mock the global todos array to start fresh for each test
-    // We need to access the module's internal state
-    vi.resetModules();
   });
 
   describe('getAll', () => {
