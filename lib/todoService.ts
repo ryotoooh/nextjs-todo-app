@@ -1,21 +1,14 @@
 import { Todo, CreateTodoRequest, UpdateTodoRequest } from './types';
 import { TodoRepository } from './repositories/TodoRepository';
 import { ArrayTodoRepository } from './repositories/ArrayTodoRepository';
-import { ApiTodoRepository } from './repositories/ApiTodoRepository';
 
 // Storage types for configuration
-export type StorageType = 'array' | 'api' | 'sqlite';
+export type StorageType = 'array' | 'sqlite';
 
 // Configuration interface
 export interface TodoServiceConfig {
   storage: StorageType;
-  apiConfig?: {
-    baseUrl: string;
-    timeout?: number;
-  };
-  sqliteConfig?: {
-    dbPath?: string;
-  };
+  databaseUrl?: string;
 }
 
 // Service class using dependency injection
@@ -31,23 +24,15 @@ export class TodoService {
       case 'array':
         return new ArrayTodoRepository();
       
-      case 'api':
-        if (!config.apiConfig) {
-          throw new Error('API configuration is required when using API storage');
-        }
-        return new ApiTodoRepository(config.apiConfig);
-      
       case 'sqlite':
         // SQLite is only available on server-side
         if (typeof window !== 'undefined') {
-          // On client-side, fallback to API
-          return new ApiTodoRepository({
-            baseUrl: process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000',
-          });
+          // On client-side, SQLite is not available - should use API routes directly
+          throw new Error('SQLite is not available on client-side. Use API routes instead.');
         }
         // On server-side, use SQLite
         const { SqliteTodoRepository } = require('./repositories/SqliteTodoRepository');
-        return new SqliteTodoRepository(config.sqliteConfig);
+        return new SqliteTodoRepository({ dbPath: config.databaseUrl });
       
       default:
         throw new Error(`Unknown storage type: ${config.storage}`);
@@ -112,8 +97,6 @@ function getStorageType(): StorageType {
   switch (storage.toLowerCase()) {
     case 'array':
       return 'array';
-    case 'api':
-      return 'api';
     case 'sqlite':
     case 'local':
       return 'sqlite';
@@ -123,22 +106,21 @@ function getStorageType(): StorageType {
   }
 }
 
+// Helper function to get database URL from environment
+function getDatabaseUrl(): string | undefined {
+  return typeof window !== 'undefined' 
+    ? process.env.NEXT_PUBLIC_DATABASE_URL
+    : process.env.DATABASE_URL;
+}
+
 // Default service instances for different storage types
 export const arrayTodoService = new TodoService({ storage: 'array' });
-export const apiTodoService = new TodoService({
-  storage: 'api',
-  apiConfig: {
-    baseUrl: process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000',
-  },
-});
 
 // SQLite service factory - lazy initialization to avoid build-time errors
 function createSqliteTodoService(): TodoService {
   return new TodoService({
     storage: 'sqlite',
-    sqliteConfig: {
-      dbPath: process.env.SQLITE_DB_PATH || './data/todos.db',
-    },
+    databaseUrl: getDatabaseUrl() || './data/todos.db',
   });
 }
 
@@ -146,17 +128,23 @@ function createSqliteTodoService(): TodoService {
 export function createDefaultTodoService(): TodoService {
   const storage = getStorageType();
   
-  // On client-side, always use API to avoid direct database access
+  // On client-side, use environment-based storage
   if (typeof window !== 'undefined') {
-    return apiTodoService;
+    switch (storage) {
+      case 'array':
+        return arrayTodoService;
+      case 'sqlite':
+        // On client-side, SQLite is not available - should use API routes directly
+        throw new Error('SQLite is not available on client-side. Use API routes instead.');
+      default:
+        return arrayTodoService;
+    }
   }
   
   // On server-side, use environment-based storage
   switch (storage) {
     case 'array':
       return arrayTodoService;
-    case 'api':
-      return apiTodoService;
     case 'sqlite':
       return createSqliteTodoService();
     default:

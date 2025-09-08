@@ -8,6 +8,7 @@ export default defineConfig({
         environment: 'jsdom',
         setupFiles: ['./vitest.setup.ts'],
         globals: true,
+        reporters: ['verbose'], // This will show individual test results with 'it' format
     },
     resolve: {
         alias: {

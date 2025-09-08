@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Todo, CreateTodoRequest, UpdateTodoRequest } from '@/lib/types';
-import { TodoService, TodoServiceConfig, createDefaultTodoService } from '@/lib/todoService';
 
 interface UseTodosReturn {
   todos: Todo[];
@@ -12,26 +11,20 @@ interface UseTodosReturn {
   deleteTodo: (id: string) => Promise<void>;
 }
 
-interface UseTodosOptions {
-  serviceConfig?: TodoServiceConfig;
-}
-
-export function useTodos(options: UseTodosOptions = {}): UseTodosReturn {
+export function useTodos(): UseTodosReturn {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Create service instance with provided config or use environment-based default
-  const service = options.serviceConfig 
-    ? new TodoService(options.serviceConfig)
-    : createDefaultTodoService();
 
   const fetchTodos = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const data = await service.getAllTodos();
+      const response = await fetch('/api/todos', { cache: 'no-store' });
+      if (!response.ok) throw new Error(`Failed to fetch todos: ${response.status}`);
+      
+      const data = await response.json();
       setTodos(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -43,7 +36,16 @@ export function useTodos(options: UseTodosOptions = {}): UseTodosReturn {
   const createTodo = async (data: CreateTodoRequest) => {
     try {
       setError(null);
-      const newTodo = await service.createTodo(data);
+      
+      const response = await fetch('/api/todos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) throw new Error(`Failed to create todo: ${response.status}`);
+      
+      const newTodo = await response.json();
       setTodos(prev => [...prev, newTodo]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create todo');
@@ -54,7 +56,16 @@ export function useTodos(options: UseTodosOptions = {}): UseTodosReturn {
   const updateTodo = async (id: string, data: UpdateTodoRequest) => {
     try {
       setError(null);
-      const updatedTodo = await service.updateTodo(id, data);
+      
+      const response = await fetch(`/api/todos/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) throw new Error(`Failed to update todo: ${response.status}`);
+      
+      const updatedTodo = await response.json();
       setTodos(prev => prev.map(todo => todo.id === id ? updatedTodo : todo));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update todo');
@@ -65,7 +76,11 @@ export function useTodos(options: UseTodosOptions = {}): UseTodosReturn {
   const deleteTodo = async (id: string) => {
     try {
       setError(null);
-      await service.deleteTodo(id);
+      
+      const response = await fetch(`/api/todos/${id}`, { method: 'DELETE' });
+      
+      if (!response.ok) throw new Error(`Failed to delete todo: ${response.status}`);
+      
       setTodos(prev => prev.filter(todo => todo.id !== id));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete todo');
