@@ -2,13 +2,17 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GET, POST } from './route';
 import { NextRequest } from 'next/server';
 
-// Mock storage
-vi.mock('@/lib/storage', () => ({
+// Mock TodoService
+const mockTodoService = {
   getAllTodos: vi.fn(),
   createTodo: vi.fn(),
+};
+
+vi.mock('@/lib/todoService', () => ({
+  TodoService: vi.fn().mockImplementation(() => mockTodoService),
 }));
 
-import { getAllTodos, createTodo } from '@/lib/storage';
+import { TodoService } from '@/lib/todoService';
 
 describe('/api/todos', () => {
   beforeEach(() => {
@@ -28,20 +32,18 @@ describe('/api/todos', () => {
         },
       ];
 
-      vi.mocked(getAllTodos).mockReturnValue(mockTodos);
+      mockTodoService.getAllTodos.mockResolvedValue(mockTodos);
 
       const response = await GET();
       const data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data).toEqual(JSON.parse(JSON.stringify(mockTodos)));
-      expect(getAllTodos).toHaveBeenCalledOnce();
+      expect(mockTodoService.getAllTodos).toHaveBeenCalledOnce();
     });
 
     it('should handle errors gracefully', async () => {
-      vi.mocked(getAllTodos).mockImplementation(() => {
-        throw new Error('Database error');
-      });
+      mockTodoService.getAllTodos.mockRejectedValue(new Error('Database error'));
 
       const response = await GET();
       const data = await response.json();
@@ -66,7 +68,7 @@ describe('/api/todos', () => {
         updatedAt: new Date('2024-01-01T00:00:00Z'),
       };
 
-      vi.mocked(createTodo).mockReturnValue(mockCreatedTodo);
+      mockTodoService.createTodo.mockResolvedValue(mockCreatedTodo);
 
       const request = new NextRequest('http://localhost:3000/api/todos', {
         method: 'POST',
@@ -81,7 +83,7 @@ describe('/api/todos', () => {
 
       expect(response.status).toBe(201);
       expect(data).toEqual(JSON.parse(JSON.stringify(mockCreatedTodo)));
-      expect(createTodo).toHaveBeenCalledWith('New Todo', 'New Description', true);
+      expect(mockTodoService.createTodo).toHaveBeenCalledWith(requestBody);
     });
 
     it('should create a todo with minimal data', async () => {
@@ -97,7 +99,7 @@ describe('/api/todos', () => {
         updatedAt: new Date('2024-01-01T00:00:00Z'),
       };
 
-      vi.mocked(createTodo).mockReturnValue(mockCreatedTodo);
+      mockTodoService.createTodo.mockResolvedValue(mockCreatedTodo);
 
       const request = new NextRequest('http://localhost:3000/api/todos', {
         method: 'POST',
@@ -112,7 +114,7 @@ describe('/api/todos', () => {
 
       expect(response.status).toBe(201);
       expect(data).toEqual(JSON.parse(JSON.stringify(mockCreatedTodo)));
-      expect(createTodo).toHaveBeenCalledWith('Minimal Todo', undefined, undefined);
+      expect(mockTodoService.createTodo).toHaveBeenCalledWith(requestBody);
     });
 
     it('should return 400 when title is missing', async () => {
@@ -133,7 +135,7 @@ describe('/api/todos', () => {
 
       expect(response.status).toBe(400);
       expect(data).toEqual({ error: 'Title is required' });
-      expect(createTodo).not.toHaveBeenCalled();
+      expect(mockTodoService.createTodo).not.toHaveBeenCalled();
     });
 
     it('should return 400 when title is empty', async () => {
@@ -155,7 +157,7 @@ describe('/api/todos', () => {
 
       expect(response.status).toBe(400);
       expect(data).toEqual({ error: 'Title is required' });
-      expect(createTodo).not.toHaveBeenCalled();
+      expect(mockTodoService.createTodo).not.toHaveBeenCalled();
     });
 
     it('should return 400 when title is only whitespace', async () => {
@@ -177,7 +179,7 @@ describe('/api/todos', () => {
 
       expect(response.status).toBe(400);
       expect(data).toEqual({ error: 'Title is required' });
-      expect(createTodo).not.toHaveBeenCalled();
+      expect(mockTodoService.createTodo).not.toHaveBeenCalled();
     });
 
     it('should handle creation errors gracefully', async () => {
@@ -185,9 +187,7 @@ describe('/api/todos', () => {
         title: 'Error Todo',
       };
 
-      vi.mocked(createTodo).mockImplementation(() => {
-        throw new Error('Creation error');
-      });
+      mockTodoService.createTodo.mockRejectedValue(new Error('Creation error'));
 
       const request = new NextRequest('http://localhost:3000/api/todos', {
         method: 'POST',

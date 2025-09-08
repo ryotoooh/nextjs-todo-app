@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAllTodos, createTodo } from '@/lib/storage';
+import { TodoService } from '@/lib/todoService';
 import { CreateTodoRequest } from '@/lib/types';
+
+// Create service instance for API routes (using array storage)
+const getTodoService = () => new TodoService({ storage: 'array' });
 
 // GET /api/todos - Get all TODOs
 export async function GET() {
   try {
-    const todos = getAllTodos();
+    const todoService = getTodoService();
+    const todos = await todoService.getAllTodos();
     return NextResponse.json(todos);
   } catch (error) {
     console.error('Error fetching todos:', error);
@@ -20,6 +24,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body: CreateTodoRequest = await request.json();
+    const todoService = getTodoService();
     
     // Validation
     if (!body.title || body.title.trim() === '') {
@@ -29,7 +34,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const newTodo = createTodo(body.title, body.description, body.is_done);
+    const newTodo = await todoService.createTodo(body);
     
     return NextResponse.json(newTodo, { status: 201 });
   } catch (error) {

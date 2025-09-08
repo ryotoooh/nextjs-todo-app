@@ -2,14 +2,18 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GET, PUT, DELETE } from './route';
 import { NextRequest } from 'next/server';
 
-// Mock storage
-vi.mock('@/lib/storage', () => ({
+// Mock TodoService
+const mockTodoService = {
   getTodoById: vi.fn(),
   updateTodo: vi.fn(),
   deleteTodo: vi.fn(),
+};
+
+vi.mock('@/lib/todoService', () => ({
+  TodoService: vi.fn().mockImplementation(() => mockTodoService),
 }));
 
-import { getTodoById, updateTodo, deleteTodo } from '@/lib/storage';
+import { TodoService } from '@/lib/todoService';
 
 describe('/api/todos/[id]', () => {
   beforeEach(() => {
@@ -27,7 +31,7 @@ describe('/api/todos/[id]', () => {
         updatedAt: new Date('2024-01-01T00:00:00Z'),
       };
 
-      vi.mocked(getTodoById).mockReturnValue(mockTodo);
+      mockTodoService.getTodoById.mockResolvedValue(mockTodo);
 
       const response = await GET(
         new NextRequest('http://localhost:3000/api/todos/1'),
@@ -37,11 +41,11 @@ describe('/api/todos/[id]', () => {
 
       expect(response.status).toBe(200);
       expect(data).toEqual(JSON.parse(JSON.stringify(mockTodo)));
-      expect(getTodoById).toHaveBeenCalledWith('1');
+      expect(mockTodoService.getTodoById).toHaveBeenCalledWith('1');
     });
 
     it('should return 404 when todo not found', async () => {
-      vi.mocked(getTodoById).mockReturnValue(undefined);
+      mockTodoService.getTodoById.mockRejectedValue(new Error('Todo not found'));
 
       const response = await GET(
         new NextRequest('http://localhost:3000/api/todos/non-existent'),
@@ -54,9 +58,7 @@ describe('/api/todos/[id]', () => {
     });
 
     it('should handle errors gracefully', async () => {
-      vi.mocked(getTodoById).mockImplementation(() => {
-        throw new Error('Database error');
-      });
+      mockTodoService.getTodoById.mockRejectedValue(new Error('Database error'));
 
       const response = await GET(
         new NextRequest('http://localhost:3000/api/todos/1'),
@@ -71,15 +73,6 @@ describe('/api/todos/[id]', () => {
 
   describe('PUT /api/todos/[id]', () => {
     it('should update todo successfully', async () => {
-      const existingTodo = {
-        id: '1',
-        title: 'Original Todo',
-        description: 'Original Description',
-        is_done: false,
-        createdAt: new Date('2024-01-01T00:00:00Z'),
-        updatedAt: new Date('2024-01-01T00:00:00Z'),
-      };
-
       const updateData = {
         title: 'Updated Todo',
         description: 'Updated Description',
@@ -87,13 +80,13 @@ describe('/api/todos/[id]', () => {
       };
 
       const updatedTodo = {
-        ...existingTodo,
+        id: '1',
         ...updateData,
+        createdAt: new Date('2024-01-01T00:00:00Z'),
         updatedAt: new Date('2024-01-02T00:00:00Z'),
       };
 
-      vi.mocked(getTodoById).mockReturnValue(existingTodo);
-      vi.mocked(updateTodo).mockReturnValue(updatedTodo);
+      mockTodoService.updateTodo.mockResolvedValue(updatedTodo);
 
       const request = new NextRequest('http://localhost:3000/api/todos/1', {
         method: 'PUT',
@@ -108,31 +101,24 @@ describe('/api/todos/[id]', () => {
 
       expect(response.status).toBe(200);
       expect(data).toEqual(JSON.parse(JSON.stringify(updatedTodo)));
-      expect(updateTodo).toHaveBeenCalledWith('1', updateData);
+      expect(mockTodoService.updateTodo).toHaveBeenCalledWith('1', updateData);
     });
 
     it('should update todo with partial data', async () => {
-      const existingTodo = {
-        id: '1',
-        title: 'Original Todo',
-        description: 'Original Description',
-        is_done: false,
-        createdAt: new Date('2024-01-01T00:00:00Z'),
-        updatedAt: new Date('2024-01-01T00:00:00Z'),
-      };
-
       const updateData = {
         is_done: true,
       };
 
       const updatedTodo = {
-        ...existingTodo,
+        id: '1',
+        title: 'Original Todo',
+        description: 'Original Description',
         ...updateData,
+        createdAt: new Date('2024-01-01T00:00:00Z'),
         updatedAt: new Date('2024-01-02T00:00:00Z'),
       };
 
-      vi.mocked(getTodoById).mockReturnValue(existingTodo);
-      vi.mocked(updateTodo).mockReturnValue(updatedTodo);
+      mockTodoService.updateTodo.mockResolvedValue(updatedTodo);
 
       const request = new NextRequest('http://localhost:3000/api/todos/1', {
         method: 'PUT',
@@ -147,11 +133,11 @@ describe('/api/todos/[id]', () => {
 
       expect(response.status).toBe(200);
       expect(data).toEqual(JSON.parse(JSON.stringify(updatedTodo)));
-      expect(updateTodo).toHaveBeenCalledWith('1', updateData);
+      expect(mockTodoService.updateTodo).toHaveBeenCalledWith('1', updateData);
     });
 
     it('should return 404 when todo not found', async () => {
-      vi.mocked(getTodoById).mockReturnValue(undefined);
+      mockTodoService.updateTodo.mockRejectedValue(new Error('Todo not found'));
 
       const request = new NextRequest('http://localhost:3000/api/todos/non-existent', {
         method: 'PUT',
@@ -166,21 +152,9 @@ describe('/api/todos/[id]', () => {
 
       expect(response.status).toBe(404);
       expect(data).toEqual({ error: 'Todo not found' });
-      expect(updateTodo).not.toHaveBeenCalled();
     });
 
     it('should return 400 when title is empty', async () => {
-      const existingTodo = {
-        id: '1',
-        title: 'Original Todo',
-        description: 'Original Description',
-        is_done: false,
-        createdAt: new Date('2024-01-01T00:00:00Z'),
-        updatedAt: new Date('2024-01-01T00:00:00Z'),
-      };
-
-      vi.mocked(getTodoById).mockReturnValue(existingTodo);
-
       const request = new NextRequest('http://localhost:3000/api/todos/1', {
         method: 'PUT',
         body: JSON.stringify({ title: '' }),
@@ -194,21 +168,10 @@ describe('/api/todos/[id]', () => {
 
       expect(response.status).toBe(400);
       expect(data).toEqual({ error: 'Title cannot be empty' });
-      expect(updateTodo).not.toHaveBeenCalled();
+      expect(mockTodoService.updateTodo).not.toHaveBeenCalled();
     });
 
     it('should return 400 when title is only whitespace', async () => {
-      const existingTodo = {
-        id: '1',
-        title: 'Original Todo',
-        description: 'Original Description',
-        is_done: false,
-        createdAt: new Date('2024-01-01T00:00:00Z'),
-        updatedAt: new Date('2024-01-01T00:00:00Z'),
-      };
-
-      vi.mocked(getTodoById).mockReturnValue(existingTodo);
-
       const request = new NextRequest('http://localhost:3000/api/todos/1', {
         method: 'PUT',
         body: JSON.stringify({ title: '   ' }),
@@ -222,23 +185,11 @@ describe('/api/todos/[id]', () => {
 
       expect(response.status).toBe(400);
       expect(data).toEqual({ error: 'Title cannot be empty' });
-      expect(updateTodo).not.toHaveBeenCalled();
+      expect(mockTodoService.updateTodo).not.toHaveBeenCalled();
     });
 
     it('should handle update errors gracefully', async () => {
-      const existingTodo = {
-        id: '1',
-        title: 'Original Todo',
-        description: 'Original Description',
-        is_done: false,
-        createdAt: new Date('2024-01-01T00:00:00Z'),
-        updatedAt: new Date('2024-01-01T00:00:00Z'),
-      };
-
-      vi.mocked(getTodoById).mockReturnValue(existingTodo);
-      vi.mocked(updateTodo).mockImplementation(() => {
-        throw new Error('Update error');
-      });
+      mockTodoService.updateTodo.mockRejectedValue(new Error('Update error'));
 
       const request = new NextRequest('http://localhost:3000/api/todos/1', {
         method: 'PUT',
@@ -256,17 +207,6 @@ describe('/api/todos/[id]', () => {
     });
 
     it('should handle invalid JSON', async () => {
-      const existingTodo = {
-        id: '1',
-        title: 'Original Todo',
-        description: 'Original Description',
-        is_done: false,
-        createdAt: new Date('2024-01-01T00:00:00Z'),
-        updatedAt: new Date('2024-01-01T00:00:00Z'),
-      };
-
-      vi.mocked(getTodoById).mockReturnValue(existingTodo);
-
       const request = new NextRequest('http://localhost:3000/api/todos/1', {
         method: 'PUT',
         body: 'invalid json',
@@ -285,17 +225,7 @@ describe('/api/todos/[id]', () => {
 
   describe('DELETE /api/todos/[id]', () => {
     it('should delete todo successfully', async () => {
-      const existingTodo = {
-        id: '1',
-        title: 'Test Todo',
-        description: 'Test Description',
-        is_done: false,
-        createdAt: new Date('2024-01-01T00:00:00Z'),
-        updatedAt: new Date('2024-01-01T00:00:00Z'),
-      };
-
-      vi.mocked(getTodoById).mockReturnValue(existingTodo);
-      vi.mocked(deleteTodo).mockReturnValue(true);
+      mockTodoService.deleteTodo.mockResolvedValue(undefined);
 
       const response = await DELETE(
         new NextRequest('http://localhost:3000/api/todos/1'),
@@ -305,11 +235,11 @@ describe('/api/todos/[id]', () => {
 
       expect(response.status).toBe(200);
       expect(data).toEqual({ message: 'Todo deleted successfully' });
-      expect(deleteTodo).toHaveBeenCalledWith('1');
+      expect(mockTodoService.deleteTodo).toHaveBeenCalledWith('1');
     });
 
     it('should return 404 when todo not found', async () => {
-      vi.mocked(getTodoById).mockReturnValue(undefined);
+      mockTodoService.deleteTodo.mockRejectedValue(new Error('Todo not found'));
 
       const response = await DELETE(
         new NextRequest('http://localhost:3000/api/todos/non-existent'),
@@ -319,46 +249,10 @@ describe('/api/todos/[id]', () => {
 
       expect(response.status).toBe(404);
       expect(data).toEqual({ error: 'Todo not found' });
-      expect(deleteTodo).not.toHaveBeenCalled();
-    });
-
-    it('should return 500 when deletion fails', async () => {
-      const existingTodo = {
-        id: '1',
-        title: 'Test Todo',
-        description: 'Test Description',
-        is_done: false,
-        createdAt: new Date('2024-01-01T00:00:00Z'),
-        updatedAt: new Date('2024-01-01T00:00:00Z'),
-      };
-
-      vi.mocked(getTodoById).mockReturnValue(existingTodo);
-      vi.mocked(deleteTodo).mockReturnValue(false);
-
-      const response = await DELETE(
-        new NextRequest('http://localhost:3000/api/todos/1'),
-        { params: Promise.resolve({ id: '1' }) }
-      );
-      const data = await response.json();
-
-      expect(response.status).toBe(500);
-      expect(data).toEqual({ error: 'Failed to delete todo' });
     });
 
     it('should handle deletion errors gracefully', async () => {
-      const existingTodo = {
-        id: '1',
-        title: 'Test Todo',
-        description: 'Test Description',
-        is_done: false,
-        createdAt: new Date('2024-01-01T00:00:00Z'),
-        updatedAt: new Date('2024-01-01T00:00:00Z'),
-      };
-
-      vi.mocked(getTodoById).mockReturnValue(existingTodo);
-      vi.mocked(deleteTodo).mockImplementation(() => {
-        throw new Error('Deletion error');
-      });
+      mockTodoService.deleteTodo.mockRejectedValue(new Error('Deletion error'));
 
       const response = await DELETE(
         new NextRequest('http://localhost:3000/api/todos/1'),

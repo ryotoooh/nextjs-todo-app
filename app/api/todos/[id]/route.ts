@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getTodoById, updateTodo, deleteTodo } from '@/lib/storage';
+import { TodoService } from '@/lib/todoService';
 import { UpdateTodoRequest } from '@/lib/types';
+
+// Create service instance for API routes (using array storage)
+const getTodoService = () => new TodoService({ storage: 'array' });
 
 // GET /api/todos/[id] - Get single TODO by ID
 export async function GET(
@@ -9,18 +12,19 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    const todoService = getTodoService();
     
-    const todo = getTodoById(id);
+    const todo = await todoService.getTodoById(id);
     
-    if (!todo) {
+    return NextResponse.json(todo);
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Todo not found') {
       return NextResponse.json(
         { error: 'Todo not found' },
         { status: 404 }
       );
     }
     
-    return NextResponse.json(todo);
-  } catch (error) {
     console.error('Error fetching todo:', error);
     return NextResponse.json(
       { error: 'Failed to fetch todo' },
@@ -37,15 +41,7 @@ export async function PUT(
   try {
     const { id } = await params;
     const body: UpdateTodoRequest = await request.json();
-    
-    // Check if todo exists
-    const existingTodo = getTodoById(id);
-    if (!existingTodo) {
-      return NextResponse.json(
-        { error: 'Todo not found' },
-        { status: 404 }
-      );
-    }
+    const todoService = getTodoService();
     
     // Validation
     if (body.title !== undefined && body.title.trim() === '') {
@@ -55,17 +51,17 @@ export async function PUT(
       );
     }
     
-    const updatedTodo = updateTodo(id, body);
-    
-    if (!updatedTodo) {
-      return NextResponse.json(
-        { error: 'Failed to update todo' },
-        { status: 500 }
-      );
-    }
+    const updatedTodo = await todoService.updateTodo(id, body);
     
     return NextResponse.json(updatedTodo);
   } catch (error) {
+    if (error instanceof Error && error.message === 'Todo not found') {
+      return NextResponse.json(
+        { error: 'Todo not found' },
+        { status: 404 }
+      );
+    }
+    
     console.error('Error updating todo:', error);
     return NextResponse.json(
       { error: 'Failed to update todo' },
@@ -81,30 +77,22 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+    const todoService = getTodoService();
     
-    // Check if todo exists
-    const existingTodo = getTodoById(id);
-    if (!existingTodo) {
-      return NextResponse.json(
-        { error: 'Todo not found' },
-        { status: 404 }
-      );
-    }
-    
-    const deleted = deleteTodo(id);
-    
-    if (!deleted) {
-      return NextResponse.json(
-        { error: 'Failed to delete todo' },
-        { status: 500 }
-      );
-    }
+    await todoService.deleteTodo(id);
     
     return NextResponse.json(
       { message: 'Todo deleted successfully' },
       { status: 200 }
     );
   } catch (error) {
+    if (error instanceof Error && error.message === 'Todo not found') {
+      return NextResponse.json(
+        { error: 'Todo not found' },
+        { status: 404 }
+      );
+    }
+    
     console.error('Error deleting todo:', error);
     return NextResponse.json(
       { error: 'Failed to delete todo' },
