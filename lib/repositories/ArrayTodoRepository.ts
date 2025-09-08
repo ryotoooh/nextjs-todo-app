@@ -49,9 +49,15 @@ export class ArrayTodoRepository implements TodoRepository {
       return null;
     }
     
+    // Convert null description to undefined to match Todo type
+    const updateData = {
+      ...data,
+      description: data.description === null ? undefined : data.description,
+    };
+    
     todos[index] = {
       ...todos[index],
-      ...data,
+      ...updateData,
       updatedAt: new Date(),
     };
     
