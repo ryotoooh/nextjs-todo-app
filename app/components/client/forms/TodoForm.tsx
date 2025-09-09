@@ -1,4 +1,4 @@
-import TodoFormShared from './TodoFormShared';
+import TodoFormShared from '../../shared/forms/TodoFormShared';
 import { CreateTodoRequest } from '@/lib/types';
 
 interface TodoFormProps {

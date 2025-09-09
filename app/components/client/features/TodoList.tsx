@@ -1,7 +1,7 @@
 'use client';
 
-import { useTodos } from '../../hooks/useTodos';
-import TodoListPresentation from '../ui/TodoListPresentation';
+import { useTodos } from '../../../hooks/useTodos';
+import TodoListPresentation from '../../shared/ui/TodoListPresentation';
 import TodoForm from '../forms/TodoForm';
 import { CreateTodoRequest } from '@/lib/types';
 
