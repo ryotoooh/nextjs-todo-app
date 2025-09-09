@@ -77,7 +77,6 @@ function getStorageType(): StorageType {
     case 'array':
       return 'array';
     case 'sqlite':
-    case 'local':
       return 'sqlite';
     case 'mongodb':
       return 'mongodb';
