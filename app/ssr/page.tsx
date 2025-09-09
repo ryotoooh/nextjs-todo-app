@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import TodoListSSR from '../components/features/TodoListSSR';
+import TodoListSSR from '../components/server/features/TodoListSSR';
 
 export default function SSRPage() {
   return (
